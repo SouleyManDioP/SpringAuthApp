@@ -45,7 +45,7 @@ Puis ouvrir :
 ### Obtention du token JWT (Postman)
 ![JWT Postman](screenshot/jwt-postman.png)
 
-### Accès à l'API protégée avec le token
+### Accès à inscription
 ![API protégée](screenshot/inscriptions.png)
 
 ### Accès à la liste
