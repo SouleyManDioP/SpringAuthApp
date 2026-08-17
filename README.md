@@ -53,3 +53,8 @@ Puis ouvrir :
 
 ### Accès à la page deconnexion
 ![API protégée](screenshot/deconnection.png)
+
+## Branche feature/keycloak-web-auth
+
+## Authentification keycloack
+![Console admin Keycloak](screenshot/Authentification_keycloack.png)

@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import sn.esmt.inscription.security.JwtAuthenticationFilter;
@@ -17,9 +19,12 @@ import sn.esmt.inscription.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          ClientRegistrationRepository clientRegistrationRepository) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
     @Bean
@@ -32,7 +37,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // --- Chaîne 1 : API REST -> JWT, stateless ---
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
@@ -50,7 +54,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // --- Chaîne 2 : Application web -> auth basique ou formulaire ---
+
     @Bean
     @Order(2)
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
@@ -59,13 +63,21 @@ public class SecurityConfig {
                         .antMatchers("/setup-user").permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
+                .oauth2Login(oauth2 -> oauth2
                         .defaultSuccessUrl("/inscriptions/nouveau", true)
-                        .permitAll())
-                .logout(logout -> logout.permitAll());
+                )
+                .logout(logout -> logout
+                        .logoutSuccessHandler(oidcLogoutSuccessHandler())
+                        .permitAll()
+                );
 
         return http.build();
+    }
+
+    private OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler() {
+        OidcClientInitiatedLogoutSuccessHandler handler =
+                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+        handler.setPostLogoutRedirectUri("http://localhost:8080/login?logout");
+        return handler;
     }
 }
