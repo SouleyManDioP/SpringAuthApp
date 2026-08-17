@@ -1,58 +1,70 @@
-# Inscription à un événement — Spring MVC + Spring JDBC + JSP + API REST
+Vues JSP : `src/main/webapp/WEB-INF/jsp/form.jsp`, `liste.jsp`, `login.jsp`.
 
-## Structure (Model / Repository / Service / Controller)
+## Authentification
 
-```
-sn.esmt.inscription
-├── model         Inscription.java
-├── repository    InscriptionRepository (interface) + InscriptionRepositoryImpl (JdbcTemplate)
-├── service       InscriptionService (interface) + InscriptionServiceImpl
-└── controller    InscriptionWebController (formulaire + tableau JSP)
-                  InscriptionRestController (API REST JSON)
-```
+Deux mécanismes cohabitent, comme demandé dans le sujet :
 
-Vues JSP : `src/main/webapp/WEB-INF/jsp/form.jsp` et `liste.jsp`.
+- **Web (formulaire)** : `/inscriptions/**` protégé par `formLogin()`, session classique.
+- **API REST** : `/api/**` protégé par **JWT**, sans session (`stateless`).
+
+Deux utilisateurs sont créés en base :
+
+| Utilisateur | Rôle  |
+|-------------|-------|
+| Souleymane  | USER  |
+| Najad       | ADMIN |
 
 ## Lancer le projet
 
-Important : le support JSP avec Tomcat embarqué ne fonctionne fiablement
-qu'en lancement via Maven (pas en exécutant le .jar packagé). Donc :
+Base de données **MySQL** requise (voir `application.properties`), la table
+`inscription` et `utilisateur` sont créées automatiquement au démarrage via `schema.sql`.
 
 ```bash
 mvn spring-boot:run
 ```
 
 Puis ouvrir :
-- Formulaire : http://localhost:8080/inscriptions/nouveau
+- Formulaire : http://localhost:8080/inscriptions/nouveau (authentification par formulaire)
 - Liste (tableau) : http://localhost:8080/inscriptions
-
-La base H2 est en mémoire (aucune installation requise) et la table
-`inscription` est créée automatiquement au démarrage via `schema.sql`.
-Pour passer à MySQL, changez `application.properties` (bloc déjà présent en commentaire)
-et ajoutez la dépendance `mysql-connector-j` dans le `pom.xml`.
 
 ## API REST
 
-| Méthode | URL                      | Description                    |
-|---------|--------------------------|---------------------------------|
-| GET     | /api/inscriptions        | Liste toutes les inscriptions  |
-| GET     | /api/inscriptions/{id}   | Détail d'une inscription       |
-| POST    | /api/inscriptions        | Crée une inscription (JSON)    |
-| DELETE  | /api/inscriptions/{id}   | Supprime une inscription       |
+| Méthode | URL                      | Description                              | Protection |
+|---------|--------------------------|-------------------------------------------|------------|
+| POST    | /api/auth/login          | Authentification, renvoie un token JWT   | Publique   |
+| GET     | /api/inscriptions        | Liste toutes les inscriptions            | JWT requis |
+| GET     | /api/inscriptions/{id}   | Détail d'une inscription                 | JWT requis |
+| POST    | /api/inscriptions        | Crée une inscription (JSON)              | JWT requis |
+| DELETE  | /api/inscriptions/{id}   | Supprime une inscription                 | JWT requis |
 
-Exemple de création via curl :
+### 1. Obtenir un token
 
 ```bash
-curl -X POST http://localhost:8080/api/inscriptions \
+curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-        "nom": "Diop",
-        "prenom": "Awa",
-        "dateNaissance": "1999-05-12",
-        "telephone": "771234567",
-        "typeEvenement": "Conférence"
-      }'
+  -d '{"username": "Najad", "password": "admin123"}'
 ```
 
-Le formulaire web et l'API REST utilisent le même Service/Repository :
-une inscription créée via l'un apparaît aussi dans l'autre.
+Réponse :
+```json
+{ "token": "eyJhbGciOiJIUzI1NiJ9..." }
+```
+
+### 2. Utiliser le token sur l'API
+
+```bash
+curl -X GET http://localhost:8080/api/inscriptions \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
+```
+
+
+## Captures des tests
+
+### Connexion au formulaire web
+![Login web](screenshot/login-web.png)
+
+### Obtention du token JWT (Postman)
+![JWT Postman](screenshot/jwt-postman.png)
+
+### Accès à l'API protégée avec le token
+![API protégée](screenshot/api-inscriptions.png)
