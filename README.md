@@ -37,28 +37,7 @@ Puis ouvrir :
 | POST    | /api/inscriptions        | Crée une inscription (JSON)              | JWT requis |
 | DELETE  | /api/inscriptions/{id}   | Supprime une inscription                 | JWT requis |
 
-### 1. Obtenir un token
 
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "Najad", "password": "admin123"}'
-```
-
-Réponse :
-```json
-{ "token": "eyJhbGciOiJIUzI1NiJ9..." }
-```
-
-### 2. Utiliser le token sur l'API
-
-```bash
-curl -X GET http://localhost:8080/api/inscriptions \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
-```
-
-
-## Captures des tests
 
 ### Connexion au formulaire web
 ![Login web](screenshot/login-web.png)
@@ -67,4 +46,10 @@ curl -X GET http://localhost:8080/api/inscriptions \
 ![JWT Postman](screenshot/jwt-postman.png)
 
 ### Accès à l'API protégée avec le token
-![API protégée](screenshot/api-inscriptions.png)
+![API protégée](screenshot/inscriptions.png)
+
+### Accès à la liste
+![API protégée](screenshot/Liste.png)
+
+### Accès à la page deconnexion
+![API protégée](screenshot/deconnection.png)
